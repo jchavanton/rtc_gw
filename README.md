@@ -1,26 +1,45 @@
 
 
 
-Installation :
+# Installation :
 
-Edit
+## WebRTC
+#### depot_tools
+```
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+export PATH=$PATH:/path/to/depot_tools
+```
+#### WebRTC sources
+```
+mkdir webrtc-checkout
+cd webrtc-checkout
+fetch --nohooks webrtc
+gclient sync
+cd src
+git checkout master
+gn gen out/Default
+```
+## RTC Gateway
 
+### Edit
+```
 ../webrtc-checkout/src/BUILD.gn
+```
 
+### Add the following to the examples section  
 ```
 group("examples") {
 ...
+
 
   if (is_linux) {
     deps += [
       ":rtc_gw",
     ]
   }
-```
 
-
-```
- rtc_executable("rtc_gw") {
+...
+rtc_executable("rtc_gw") {
     testonly = true
     sources = [
       "rtc_gw/conductor.cc",
