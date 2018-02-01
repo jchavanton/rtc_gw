@@ -111,6 +111,10 @@ bool Conductor::CreatePeerConnection(bool dtls) {
   RTC_DCHECK(peer_connection_.get() == NULL);
 
   webrtc::PeerConnectionInterface::RTCConfiguration config;
+  config.audio_jitter_buffer_max_packets = 100;
+  config.audio_jitter_buffer_fast_accelerate = true;
+  RTC_LOG(INFO) << "config.audio_jitter_buffer_fast_accelerate: " << config.audio_jitter_buffer_fast_accelerate;
+
   webrtc::PeerConnectionInterface::IceServer server;
   server.uri = GetPeerConnectionString();
   config.servers.push_back(server);
