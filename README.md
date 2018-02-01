@@ -19,7 +19,15 @@ cd src
 git checkout master
 gn gen out/Default
 ```
+
+
 ## RTC Gateway
+
+### 
+```
+cd webrtc-checkout/src/examples
+git clone https://github.com/jchavanton/rtc_gw.git
+```
 
 ### Edit
 ```
