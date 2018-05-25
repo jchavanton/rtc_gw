@@ -100,13 +100,13 @@ class Conductor
   // Queue a message to the remote peer.
   void QueueMessage(const std::string& json_object);
 
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_a_;
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_b_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
   PeerConnectionListener* client_;
   std::deque<std::string*> pending_messages_;
-  std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
-      active_streams_;
+  std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>> active_streams_;
   std::string server_;
 };
 

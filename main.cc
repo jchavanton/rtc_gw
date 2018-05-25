@@ -65,6 +65,7 @@ int main(int argc, char* argv[]) {
   // Must be constructed after we set the socketserver.
   PeerConnectionListener client;
   rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(&client));
+  rtc::scoped_refptr<Conductor> conductor_b(new rtc::RefCountedObject<Conductor>(&client));
   socket_server.set_client(&client);
   socket_server.set_conductor(conductor);
   conductor->StartListen(FLAG_listen, FLAG_port);

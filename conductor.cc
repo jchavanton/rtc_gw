@@ -61,11 +61,11 @@ Conductor::Conductor(PeerConnectionListener* client) : peer_id_(-1), client_(cli
 }
 
 Conductor::~Conductor() {
-  RTC_DCHECK(peer_connection_.get() == NULL);
+  RTC_DCHECK(peer_connection_a_.get() == NULL);
 }
 
 bool Conductor::connection_active() const {
-  return peer_connection_.get() != NULL;
+  return peer_connection_a_.get() != NULL;
 }
 
 void Conductor::Close() {
@@ -75,7 +75,7 @@ void Conductor::Close() {
 
 bool Conductor::InitializePeerConnection() {
   RTC_DCHECK(peer_connection_factory_.get() == NULL);
-  RTC_DCHECK(peer_connection_.get() == NULL);
+  RTC_DCHECK(peer_connection_a_.get() == NULL);
   // CustomAudioModule
   signaling_thread_ = new rtc::Thread();
   rtcgw::FileAudioDevice *audio_device_ = new rtcgw::FileAudioDevice("/audio/input_48K_16bits_pcm.raw", "/audio/recording.raw");
@@ -103,49 +103,47 @@ bool Conductor::InitializePeerConnection() {
     DeletePeerConnection();
   }
   AddStreams();
-  return peer_connection_.get() != NULL;
+  return peer_connection_a_.get() != NULL;
 }
 
 bool Conductor::CreatePeerConnection(bool dtls) {
   RTC_DCHECK(peer_connection_factory_.get() != NULL);
-  RTC_DCHECK(peer_connection_.get() == NULL);
+  RTC_DCHECK(peer_connection_a_.get() == NULL);
 
   webrtc::PeerConnectionInterface::RTCConfiguration config;
-  config.audio_jitter_buffer_max_packets = 100;
-  config.audio_jitter_buffer_fast_accelerate = true;
+  // config.audio_jitter_buffer_max_packets = 100;
+  // config.audio_jitter_buffer_fast_accelerate = true;
   RTC_LOG(INFO) << "config.audio_jitter_buffer_fast_accelerate: " << config.audio_jitter_buffer_fast_accelerate;
 
   webrtc::PeerConnectionInterface::IceServer server;
   server.uri = GetPeerConnectionString();
   config.servers.push_back(server);
 
-  webrtc::FakeConstraints constraints;
-  if (dtls) {
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                            "true");
-    RTC_LOG(INFO) << __FUNCTION__ << " DTLS constraint: true ";
-  } else {
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                            "false");
-    RTC_LOG(INFO) << __FUNCTION__ << " DTLS constraint: false ";
-  }
-  constraints.AddOptional(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo,
-                            "false");
-  RTC_LOG(INFO) << __FUNCTION__ << " offer receive video: false ";
-  peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-      config, &constraints, NULL, NULL, this);
-  return peer_connection_.get() != NULL;
+  // leg A
+  webrtc::FakeConstraints constraints_leg_a;
+  constraints_leg_a.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "true");
+  constraints_leg_a.AddOptional(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo, "false");
+  peer_connection_a_ = peer_connection_factory_->CreatePeerConnection(config, &constraints_leg_a, NULL, NULL, this);
+
+  // leg B
+  webrtc::FakeConstraints constraints_leg_b;
+  constraints_leg_b.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "false");
+  constraints_leg_b.AddOptional(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo, "false");
+  constraints_leg_b.AddOptional(webrtc::MediaConstraintsInterface::kUseRtpMux, "false");
+  peer_connection_b_ = peer_connection_factory_->CreatePeerConnection(config, &constraints_leg_b, NULL, NULL, this);
+
+  return peer_connection_a_.get() != NULL;
 }
 
 void Conductor::DeletePeerConnection() {
-  peer_connection_ = NULL;
+  peer_connection_a_ = NULL;
   active_streams_.clear();
   peer_connection_factory_ = NULL;
   peer_id_ = -1;
 }
 
 void Conductor::EnsureStreamingUI() {
-  RTC_DCHECK(peer_connection_.get() != NULL);
+  RTC_DCHECK(peer_connection_a_.get() != NULL);
 }
 
 //
@@ -177,7 +175,7 @@ void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 
 //    std::vector<cricket::Candidate> candidates;
 //    candidates.push_back(candidate->candidate());
-//    peer_connection_->RemoveIceCandidates(candidates);
+//    peer_connection_a_->RemoveIceCandidates(candidates);
 
     std::string sdp;
     if (!candidate->ToString(&sdp)) {
@@ -228,9 +226,9 @@ void Conductor::OnPeerDisconnected(int id) {
 void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
   RTC_DCHECK(peer_id_ == peer_id || peer_id_ == -1);
   RTC_DCHECK(!message.empty());
-  RTC_LOG(INFO) << __FUNCTION__ ;
+  RTC_LOG(INFO) << __FUNCTION__ << " peer_id:" << peer_id;
 
-  if (!peer_connection_.get()) {
+  if (!peer_connection_a_.get()) {
     RTC_DCHECK(peer_id_ == -1);
     peer_id_ = peer_id;
 
@@ -275,23 +273,28 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       return;
     }
     RTC_LOG(INFO) << " Received session description :" << message;
-    peer_connection_->SetRemoteDescription(
-        DummySetSessionDescriptionObserver::Create(), session_description);
+    peer_connection_a_->SetRemoteDescription( DummySetSessionDescriptionObserver::Create(), session_description);
     RTC_LOG(INFO) << " remote description set !";
-    if (session_description->type() ==
-        webrtc::SessionDescriptionInterface::kOffer) {
-      peer_connection_->CreateAnswer(this, NULL);
-      RTC_LOG(INFO) << " Answer created !";
+    if (session_description->type() == webrtc::SessionDescriptionInterface::kOffer) {
+      peer_connection_a_->CreateAnswer(this, NULL);
+      RTC_LOG(INFO) << " LegA : Answer created !";
+
+      // webrtc::FakeConstraints constraints_leg_b;
+      // constraints_leg_b.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "false");
+      // constraints_leg_b.AddOptional(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo, "false");
+      // constraints_leg_b.AddOptional(webrtc::MediaConstraintsInterface::kUseRtpMux, "false");
+      // constraints_leg_b.SetMandatoryReceiveAudio(true);
+      // peer_connection_b_->CreateOffer(this, &constraints_leg_b);
+      peer_connection_b_->CreateOffer(this, NULL);
+      // RTC_LOG(INFO) << " LegB : Offer created !";
     }
     return;
   } else {
     std::string sdp_mid;
     int sdp_mlineindex = 0;
     std::string sdp;
-    if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName,
-                                      &sdp_mid) ||
-        !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName,
-                                   &sdp_mlineindex) ||
+    if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName, &sdp_mid) ||
+        !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName, &sdp_mlineindex) ||
         !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp)) {
       RTC_LOG(WARNING) << "Can't parse received message.";
       return;
@@ -304,7 +307,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
           << "SdpParseError was: " << error.description;
       return;
     }
-    if (!peer_connection_->AddIceCandidate(candidate.get())) {
+    if (!peer_connection_a_->AddIceCandidate(candidate.get())) {
       RTC_LOG(WARNING) << "Failed to apply the received candidate";
       return;
     }
@@ -335,49 +338,65 @@ void Conductor::ConnectToPeer(int peer_id) {
   RTC_DCHECK(peer_id_ == -1);
   RTC_DCHECK(peer_id != -1);
 
-  if (peer_connection_.get()) {
+  if (peer_connection_a_.get()) {
     RTC_LOG(INFO) << "Error: We only support connecting to one peer at a time";
     return;
   }
 
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
-    peer_connection_->CreateOffer(this, NULL);
+    peer_connection_a_->CreateOffer(this, NULL);
   } else {
     RTC_LOG(INFO) << "Error Failed to initialize PeerConnection";
   }
 }
 
 void Conductor::AddStreams() {
-  if (active_streams_.find("stream_id_todo_multi_stream") != active_streams_.end())
+  if (active_streams_.find("stream_id_audio_a") != active_streams_.end())
     return;  // Already added.
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      peer_connection_factory_->CreateAudioTrack(
-          kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
+  { // LegA
+     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+         peer_connection_factory_->CreateAudioTrack(
+             kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
 
-  rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-      peer_connection_factory_->CreateLocalMediaStream("stream_id_todo_multi_stream");
+     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
+         peer_connection_factory_->CreateLocalMediaStream("stream_id_audio_a");
 
-  stream->AddTrack(audio_track);
-  if (!peer_connection_->AddStream(stream)) {
-    RTC_LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
-  }
-  typedef std::pair<std::string,
-                    rtc::scoped_refptr<webrtc::MediaStreamInterface> >
-      MediaStreamPair;
-  active_streams_.insert(MediaStreamPair(stream->id(), stream));
+     stream->AddTrack(audio_track);
+     if (!peer_connection_a_->AddStream(stream)) {
+       RTC_LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
+     }
+     typedef std::pair<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>> MediaStreamPair;
+     active_streams_.insert(MediaStreamPair(stream->id(), stream));
+  } // LebA
+
+  { // LegB
+     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_b(
+         peer_connection_factory_->CreateAudioTrack(
+             kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
+
+     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream_b =
+         peer_connection_factory_->CreateLocalMediaStream("stream_id_audio_b");
+
+     stream_b->AddTrack(audio_track_b);
+     if (!peer_connection_b_->AddStream(stream_b)) {
+       RTC_LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
+     }
+     //typedef std::pair<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>> MediaStreamPair;
+     //active_streams_.insert(MediaStreamPair(stream_b->id(), stream_b));
+  } // LebB Done
 }
 
 void Conductor::DisconnectFromCurrentPeer() {
   RTC_LOG(INFO) << __FUNCTION__;
-  if (peer_connection_.get()) {
+  if (peer_connection_a_.get()) {
     client_->SendHangUp(peer_id_);
     DeletePeerConnection();
   }
 }
 
-// Not used since we got rid of GTK, finctionnality need to be moved one by one
+// Not used since we got rid of GTK, fonctionnality need to be moved one by one
 void Conductor::ThreadCallback(int msg_id, void* data) {
   switch (msg_id) {
     case PEER_CONNECTION_CLOSED:
@@ -411,10 +430,16 @@ void Conductor::ThreadCallback(int msg_id, void* data) {
 }
 
 void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
-  peer_connection_->SetLocalDescription(
-      DummySetSessionDescriptionObserver::Create(), desc);
-  desc_ = desc;
-  RTC_LOG(INFO) << __FUNCTION__ << " success SDP answer waiting for ICE candidate" ;
+  std::string sdp;
+  desc->ToString(&sdp);
+  if (desc->GetType() == webrtc::SdpType::kOffer) {
+  	peer_connection_b_->SetLocalDescription(DummySetSessionDescriptionObserver::Create(), desc);
+  	RTC_LOG(INFO) << __FUNCTION__ << "[LegB] success SDP Offer created, waiting for ICE candidate : \n" << sdp;
+  } else {
+  	peer_connection_a_->SetLocalDescription(DummySetSessionDescriptionObserver::Create(), desc);
+  	RTC_LOG(INFO) << __FUNCTION__ << "[LegA] success SDP Answer created, waiting for ICE candidate : \n" << sdp;
+  	desc_ = desc;
+  }
 }
 
 void Conductor::OnFailure(const std::string& error) {
