@@ -1,3 +1,4 @@
-cd ..
+#!/bin/sh
+cd ../..
+pwd
 ninja -C out/Default
-cd examples
