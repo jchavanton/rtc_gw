@@ -29,7 +29,7 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
   void set_client(PeerConnectionListener* client) { client_ = client; }
   void set_conductor(Conductor* conductor) { conductor_ = conductor; }
 
-  virtual bool Wait(int cms, bool process_io) {
+  virtual bool Wait(int cms, bool process_io) override {
     conductor_->SendMessage();
     return rtc::PhysicalSocketServer::Wait(10/*cms == -1 ? 1 : cms*/, process_io);
   }

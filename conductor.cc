@@ -155,13 +155,13 @@ void Conductor::EnsureStreamingUI() {
 // Called when a remote stream is added
 void Conductor::OnAddStream(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << stream->label();
+    RTC_LOG(INFO) << __FUNCTION__ << " " << stream->id();
     // QueueThreadCallback(NEW_STREAM_ADDED, stream.release());
 }
 
 void Conductor::OnRemoveStream(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << stream->label();
+    RTC_LOG(INFO) << __FUNCTION__ << " " << stream->id();
     // QueueThreadCallback(STREAM_REMOVED, stream.release());
 }
 
@@ -349,7 +349,7 @@ void Conductor::ConnectToPeer(int peer_id) {
 }
 
 void Conductor::AddStreams() {
-  if (active_streams_.find(kStreamLabel) != active_streams_.end())
+  if (active_streams_.find("stream_id_todo_multi_stream") != active_streams_.end())
     return;  // Already added.
 
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
@@ -357,7 +357,7 @@ void Conductor::AddStreams() {
           kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
 
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-      peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
+      peer_connection_factory_->CreateLocalMediaStream("stream_id_todo_multi_stream");
 
   stream->AddTrack(audio_track);
   if (!peer_connection_->AddStream(stream)) {
@@ -366,7 +366,7 @@ void Conductor::AddStreams() {
   typedef std::pair<std::string,
                     rtc::scoped_refptr<webrtc::MediaStreamInterface> >
       MediaStreamPair;
-  active_streams_.insert(MediaStreamPair(stream->label(), stream));
+  active_streams_.insert(MediaStreamPair(stream->id(), stream));
 }
 
 void Conductor::DisconnectFromCurrentPeer() {
