@@ -20,7 +20,7 @@
 
 class CustomSocketServer : public rtc::PhysicalSocketServer {
  public:
-  explicit CustomSocketServer() : conductor_(NULL), client_(NULL) {}
+  explicit CustomSocketServer() : conductor_server_(NULL), client_(NULL) {}
   virtual ~CustomSocketServer() {}
 
   void SetMessageQueue(rtc::MessageQueue* queue) override {
@@ -28,16 +28,16 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
   }
 
   void set_client(PeerConnectionListener* client) { client_ = client; }
-  void set_conductor(Conductor* conductor) { conductor_ = conductor; }
+  void set_conductor_server(ConductorServer* conductor_server) { conductor_server_ = conductor_server; }
 
   virtual bool Wait(int cms, bool process_io) override {
-    conductor_->SendMessage();
+    conductor_server_->get_conductor()->SendMessage();
     return rtc::PhysicalSocketServer::Wait(10/*cms == -1 ? 1 : cms*/, process_io);
   }
 
  protected:
   rtc::MessageQueue* message_queue_;
-  Conductor* conductor_;
+  ConductorServer* conductor_server_;
   PeerConnectionListener* client_;
 };
 
@@ -66,9 +66,12 @@ int main(int argc, char* argv[]) {
   // Must be constructed after we set the socketserver.
   PeerConnectionListener client;
   ConductorServer conductor_server(&client);
-  rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(&client));
+  // rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(&client));
+
+  socket_server.set_conductor_server(&conductor_server);
   socket_server.set_client(&client);
-  socket_server.set_conductor(conductor);
+  Conductor * conductor = conductor_server.get_conductor();
+
   conductor->StartListen(FLAG_listen, FLAG_port);
   thread.Run();
 

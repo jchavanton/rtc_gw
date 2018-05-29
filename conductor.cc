@@ -322,6 +322,7 @@ void Conductor::OnServerConnectionFailure() {
 }
 
 void Conductor::StartListen(const std::string& ip, int port) {
+  RTC_LOG(INFO) << "client["<< client_ << "]\n";
   client_->listen_ip = ip;
   client_->Listen(ip, port);
 }
