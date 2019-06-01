@@ -1,1 +1,1 @@
-docker build . -t rtc_gw
+docker build --no-cache . -t rtc_gw
