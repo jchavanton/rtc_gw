@@ -40,8 +40,8 @@ FileAudioDevice::FileAudioDevice(const char* inputFilename,
       _recording(false),
       _lastCallPlayoutMillis(0),
       _lastCallRecordMillis(0),
-      _outputFile(*webrtc::FileWrapper::Create()),
-      _inputFile(*webrtc::FileWrapper::Create()),
+//      _outputFile(new webrtc::FileWrapper()),
+//      _inputFile(new webrtc::FileWrapper()),
       _outputFilename(outputFilename),
       _inputFilename(inputFilename) {
       Audio_device_buffer_ = new webrtc::AudioDeviceBuffer();
@@ -215,9 +215,9 @@ int32_t FileAudioDevice::StartPlayout() {
   }
 
   // PLAYOUT
-  if (!_outputFilename.empty() &&
-      !_outputFile.OpenFile(_outputFilename.c_str(), false)) {
-    RTC_LOG(LS_ERROR) << "Failed to open playout file: " << _outputFilename;
+  if (!_outputFilename.empty() ) {
+     _outputFile = _outputFile.OpenWriteOnly(_outputFilename.c_str());
+    RTC_LOG(LS_ERROR) << "Failed to open playout file["<< _outputFilename <<"]";
     _playing = false;
     delete[] _playoutBuffer;
     _playoutBuffer = NULL;
@@ -251,7 +251,7 @@ int32_t FileAudioDevice::StopPlayout() {
   _playoutFramesLeft = 0;
   delete[] _playoutBuffer;
   _playoutBuffer = NULL;
-  _outputFile.CloseFile();
+  _outputFile.Close();
 
   RTC_LOG(LS_INFO) << "Stopped playout capture to output file: "
                    << _outputFilename;
@@ -272,9 +272,9 @@ int32_t FileAudioDevice::StartRecording() {
     _recordingBuffer = new int8_t[_recordingBufferSizeIn10MS];
   }
 
-  if (!_inputFilename.empty() &&
-      !_inputFile.OpenFile(_inputFilename.c_str(), true)) {
-    RTC_LOG(LS_ERROR) << "Failed to open audio input file: " << _inputFilename;
+  if (!_inputFilename.empty()) {
+      _inputFile = _inputFile.OpenReadOnly(_inputFilename.c_str());
+    RTC_LOG(LS_ERROR) << "Failed to open audio input file[" << _inputFilename <<"]";
     _recording = false;
     delete[] _recordingBuffer;
     _recordingBuffer = NULL;
@@ -309,7 +309,7 @@ int32_t FileAudioDevice::StopRecording() {
     delete[] _recordingBuffer;
     _recordingBuffer = NULL;
   }
-  _inputFile.CloseFile();
+  _inputFile.Close();
 
   RTC_LOG(LS_INFO) << "Stopped recording from input file: " << _inputFilename;
   return 0;

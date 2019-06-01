@@ -179,8 +179,8 @@ class FileAudioDevice : public webrtc::AudioDeviceModule {
   int64_t _lastCallPlayoutMillis;
   int64_t _lastCallRecordMillis;
 
-  webrtc::FileWrapper& _outputFile;
-  webrtc::FileWrapper& _inputFile;
+  webrtc::FileWrapper _outputFile;
+  webrtc::FileWrapper _inputFile;
   std::string _outputFilename;
   std::string _inputFilename;
 };
