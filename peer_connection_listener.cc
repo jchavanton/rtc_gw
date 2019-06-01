@@ -14,8 +14,8 @@
 #include "examples/rtc_gw/defaults.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/string_utils.h"
 
 #ifdef WIN32
 #include "rtc_base/win32socketserver.h"

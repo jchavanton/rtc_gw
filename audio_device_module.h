@@ -18,8 +18,8 @@
 #include <string>
 
 #include "modules/audio_device/audio_device_generic.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/system/file_wrapper.h"
 
 namespace rtc {

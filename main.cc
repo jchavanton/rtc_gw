@@ -14,7 +14,7 @@
 #include "examples/rtc_gw/flagdefs.h"
 #include "examples/rtc_gw/peer_connection_listener.h"
 
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/ssl_adapter.h"
 #include "rtc_base/thread.h"
 
 class CustomSocketServer : public rtc::PhysicalSocketServer {

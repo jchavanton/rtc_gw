@@ -19,8 +19,8 @@
 #include <string>
 
 #include "examples/rtc_gw/audio_device_module.h"
-#include "api/mediastreaminterface.h"
-#include "api/peerconnectioninterface.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
 #include "examples/rtc_gw/peer_connection_listener.h"
 
 class Conductor
