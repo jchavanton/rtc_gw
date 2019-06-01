@@ -14,12 +14,13 @@
 #include <utility>
 #include <vector>
 
-#include "api/test/fakeconstraints.h"
+// #include "api/test/fakeconstraints.h"
 #include "examples/rtc_gw/defaults.h"
-#include "media/engine/webrtcvideocapturerfactory.h"
+// #include "media/engine/webrtcvideocapturerfactory.h"
+#include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/json.h"
+#include "rtc_base/strings/json.h"
 #include "rtc_base/logging.h"
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
@@ -170,7 +171,7 @@ void Conductor::OnIceGatheringChange(
     webrtc::PeerConnectionInterface::IceGatheringState new_state) {
 
     RTC_LOG(INFO) << __FUNCTION__ << " ? " << webrtc::PeerConnectionInterface::kIceGatheringComplete << " == " << new_state;
-};
+}
 
 void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     RTC_LOG(WARNING) << __FUNCTION__ << " " << candidate->sdp_mline_index();
@@ -280,7 +281,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
     RTC_LOG(INFO) << " remote description set !";
     if (session_description->type() ==
         webrtc::SessionDescriptionInterface::kOffer) {
-      peer_connection_->CreateAnswer(this, NULL);
+      peer_connection_->CreateAnswer(this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
       RTC_LOG(INFO) << " Answer created !";
     }
     return;
@@ -342,7 +343,7 @@ void Conductor::ConnectToPeer(int peer_id) {
 
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
-    peer_connection_->CreateOffer(this, NULL);
+    peer_connection_->CreateOffer(this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
   } else {
     RTC_LOG(INFO) << "Error Failed to initialize PeerConnection";
   }
@@ -354,7 +355,7 @@ void Conductor::AddStreams() {
 
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
       peer_connection_factory_->CreateAudioTrack(
-          kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
+          kAudioLabel, peer_connection_factory_->CreateAudioSource(cricket::AudioOptions())));
 
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream("stream_id_todo_multi_stream");

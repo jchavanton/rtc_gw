@@ -20,8 +20,8 @@ extern const uint16_t kDefaultServerPort;  // From defaults.[h|cc]
 // header file so that they can be shared across the different main.cc's
 // for each platform.
 
-DEFINE_bool(help, false, "Prints this message");
-DEFINE_int(port, kDefaultServerPort, "The port on which the server is listening.");
-DEFINE_string(listen, "localhost", "The IP to listen on.");
+WEBRTC_DEFINE_bool(help, false, "Prints this message");
+WEBRTC_DEFINE_int(port, kDefaultServerPort, "The port on which the server is listening.");
+WEBRTC_DEFINE_string(listen, "localhost", "The IP to listen on.");
 
 #endif  // RTC_GW_FLAGDEFS_H_

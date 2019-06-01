@@ -21,8 +21,6 @@
 #include "rtc_base/win32socketserver.h"
 #endif
 
-using rtc::sprintfn;
-
 namespace {
 
 // This is our magical hangup signal.
@@ -86,7 +84,7 @@ void PeerConnectionListener::RegisterObserver(
 bool PeerConnectionListener::SendToPeer(int peer_id, const std::string& message) {
   if (peer_id == 7) {
     char headers[1024];
-    sprintfn(headers, sizeof(headers),
+    snprintf(headers, sizeof(headers),
     "HTTP/1.1 200 OK\r\n"
     "Server: RTC_GW/0.1\r\n"
     "Cache-Control: no-cache\r\n"
@@ -125,7 +123,7 @@ bool PeerConnectionListener::SignOut() {
 
     if (my_id_ != -1) {
       char buffer[1024];
-      sprintfn(buffer, sizeof(buffer),
+      snprintf(buffer, sizeof(buffer),
           "GET /sign_out?peer_id=%i HTTP/1.0\r\n\r\n", my_id_);
       onconnect_data_ = buffer;
       return ConnectControlSocket();
@@ -246,7 +244,7 @@ void PeerConnectionListener::OnConnect(rtc::AsyncSocket* socket) {
 
 void PeerConnectionListener::OnHangingGetConnect(rtc::AsyncSocket* socket) {
   char buffer[1024];
-  sprintfn(buffer, sizeof(buffer),
+  snprintf(buffer, sizeof(buffer),
            "GET /wait?peer_id=%i HTTP/1.0\r\n\r\n", my_id_);
   int len = static_cast<int>(strlen(buffer));
   int sent = socket->Send(buffer, len);
