@@ -10,6 +10,8 @@
  */
 
 #include "examples/rtc_gw/audio_device_module.h"
+#include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
@@ -44,7 +46,7 @@ FileAudioDevice::FileAudioDevice(const char* inputFilename,
 //      _inputFile(new webrtc::FileWrapper()),
       _outputFilename(outputFilename),
       _inputFilename(inputFilename) {
-      Audio_device_buffer_ = new webrtc::AudioDeviceBuffer();
+      Audio_device_buffer_ = new webrtc::AudioDeviceBuffer(&webrtc::GlobalTaskQueueFactory());
       AttachAudioBuffer(Audio_device_buffer_);
 }
 
