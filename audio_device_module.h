@@ -152,8 +152,8 @@ class FileAudioDevice : public webrtc::AudioDeviceModule {
   virtual rtc::RefCountReleaseStatus Release() const { return rtc::RefCountReleaseStatus::kDroppedLastRef; }
 
  private:
-  static bool RecThreadFunc(void*);
-  static bool PlayThreadFunc(void*);
+  static void RecThreadFunc(void*);
+  static void PlayThreadFunc(void*);
   bool RecThreadProcess();
   bool PlayThreadProcess();
 

@@ -78,12 +78,14 @@ bool Conductor::InitializePeerConnection() {
   RTC_DCHECK(peer_connection_factory_.get() == NULL);
   RTC_DCHECK(peer_connection_.get() == NULL);
   // CustomAudioModule
-  signaling_thread_ = new rtc::Thread();
+  // signaling_thread_ = new rtc::Thread();
+  // control_socket_ from peer connection ?
   rtcgw::FileAudioDevice *audio_device_ = new rtcgw::FileAudioDevice("/audio/input_48K_16bits_pcm.raw", "/audio/recording.raw");
   signaling_thread_->Start();
 
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-     signaling_thread_,
+     // signaling_thread_,
+     nullptr,
      rtc::Thread::Current(),
      rtc::Thread::Current(),
      audio_device_,

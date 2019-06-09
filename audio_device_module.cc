@@ -227,9 +227,9 @@ int32_t FileAudioDevice::StartPlayout() {
   }
 
   _ptrThreadPlay.reset(new rtc::PlatformThread(
-      PlayThreadFunc, this, "webrtc_audio_module_play_thread"));
+      PlayThreadFunc, this, "webrtc_audio_module_play_thread", rtc::kRealtimePriority));
   _ptrThreadPlay->Start();
-  _ptrThreadPlay->SetPriority(rtc::kRealtimePriority);
+ // _ptrThreadPlay->SetPriority(rtc::kRealtimePriority);
 
   RTC_LOG(LS_INFO) << "Started playout capture to output file: "
                    << _outputFilename;
@@ -287,7 +287,7 @@ int32_t FileAudioDevice::StartRecording() {
       RecThreadFunc, this, "webrtc_audio_module_capture_thread"));
 
   _ptrThreadRec->Start();
-  _ptrThreadRec->SetPriority(rtc::kRealtimePriority);
+  // _ptrThreadRec->SetPriority(rtc::kRealtimePriority);
 
   RTC_LOG(LS_INFO) << "Started recording from input file: " << _inputFilename;
 
@@ -446,12 +446,18 @@ void FileAudioDevice::AttachAudioBuffer(webrtc::AudioDeviceBuffer* audioBuffer) 
   _ptrAudioBuffer->SetPlayoutChannels(0);
 }
 
-bool FileAudioDevice::PlayThreadFunc(void* pThis) {
-  return (static_cast<FileAudioDevice*>(pThis)->PlayThreadProcess());
+void FileAudioDevice::PlayThreadFunc(void* pThis) {
+	FileAudioDevice* device = static_cast<FileAudioDevice*>(pThis);
+	while (device->PlayThreadProcess()) {
+	}
+	// return (static_cast<FileAudioDevice*>(pThis)->PlayThreadProcess());
 }
 
-bool FileAudioDevice::RecThreadFunc(void* pThis) {
-  return (static_cast<FileAudioDevice*>(pThis)->RecThreadProcess());
+void FileAudioDevice::RecThreadFunc(void* pThis) {
+	FileAudioDevice* device = static_cast<FileAudioDevice*>(pThis);
+	while (device->RecThreadProcess()) {
+	}
+	// return (static_cast<FileAudioDevice*>(pThis)->RecThreadProcess());
 }
 
 bool FileAudioDevice::PlayThreadProcess() {
