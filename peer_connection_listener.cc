@@ -91,7 +91,7 @@ bool PeerConnectionListener::SendToPeer(int peer_id, const std::string& message)
     "Content-Length: %i\r\n"
     "Content-Type: text/plain\r\n"
     "\r\n",
-       message.length());
+      (int) message.length());
     std::string answer = headers;
     // answer += message.substr(14, message.length() - 40);
     answer += message; //.substr(14, message.length() - 40);
