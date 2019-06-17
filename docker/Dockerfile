@@ -25,28 +25,11 @@ RUN echo "checkout and generate Ninja files" \
 	&& sed -i 's/rtc_use_x11 = use_x11/rtc_use_x11 = false/g' webrtc.gni \
 	&& gn gen out/Default
 
-# cd /git/webrtc-checkout 
-# export PATH=$PATH:/git/depot_tools 
-# gclient sync 
-
-
-# cd src \
-# git checkout master \
-# cd /git/webrtc-checkout/src/examples
-
-
-
-# 	&& gn gen out/Default
-
-# RUN echo "gclient syn" \
-#	&& export PATH=$PATH:/git/depot_tools  \
-# 	&& gclient sync \
-# 	&& cd src \
-# 	&& git checkout master \
-# 	&& gn gen out/Default
-
-# RUN echo "build RTC GW" \
-#	&& cd /git/webrtc-checkout/src/examples \
-#	&& git clone https://github.com/jchavanton/rtc_gw.git \
-#	&& patch -p1 < examples/rtc_gw/build.patch \
-#	&& ninja -C out/Default
+RUN echo "build RTC GW" \
+	&& export PATH=$PATH:/git/depot_tools  \
+	&& cd /git/webrtc-checkout/src/examples \
+	&& git clone https://github.com/jchavanton/rtc_gw.git \
+	&& cd rtc_gw && git checkout update \
+	&& cd /git/webrtc-checkout/src \
+        && patch -p1 < examples/rtc_gw/build.patch \
+	&& ninja -C out/Default
