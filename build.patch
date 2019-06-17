@@ -1,0 +1,112 @@
+diff --git a/examples/BUILD.gn b/examples/BUILD.gn
+index a14c206475..275a7e849d 100644
+--- a/examples/BUILD.gn
++++ b/examples/BUILD.gn
+@@ -22,6 +22,12 @@ group("examples") {
+   testonly = true
+   deps = []
+ 
++  if (is_linux) {
++    deps += [
++      ":rtc_gw",
++    ]
++  }
++
+   if (is_android) {
+     deps += [
+       ":AppRTCMobile",
+@@ -705,6 +711,72 @@ if (is_linux || is_win) {
+     ]
+   }
+ 
++
++  ### RTC_GW BEGIN
++  rtc_executable("rtc_gw") {
++    # testonly = true
++    sources = [
++      "rtc_gw/conductor.cc",
++      "rtc_gw/conductor.h",
++      "rtc_gw/defaults.cc",
++      "rtc_gw/defaults.h",
++      "rtc_gw/audio_device_module.cc",
++      "rtc_gw/audio_device_module.h",
++      "rtc_gw/peer_connection_listener.cc",
++      "rtc_gw/peer_connection_listener.h",
++      "rtc_gw/main.cc",
++    ]
++
++    cflags = []
++    cflags += [ "-Wno-deprecated-declarations" ]
++    deps = []
++
++   # deps += [
++   #   "../api:audio_options_api",
++   #   "../api:create_peerconnection_factory",
++   #   "../api:libjingle_peerconnection_api",
++   #   "../api:scoped_refptr",
++   #   "../api/audio:audio_mixer_api",
++   #   "../api/audio_codecs:audio_codecs_api",
++   #   "../api/video:video_frame_i420",
++   #   "../api/video_codecs:video_codecs_api",
++   #   "../media:rtc_media_base",
++   #   "../p2p:rtc_p2p",
++   #   "../rtc_base:checks",
++   #   "../rtc_base/third_party/sigslot",
++   #   "../system_wrappers:field_trial",
++   #   "../test:field_trial",
++   #   "../test:platform_video_capturer",
++   #   "//third_party/abseil-cpp/absl/memory",
++   #   "//third_party/abseil-cpp/absl/types:optional",
++   # ]
++    deps += [
++      "../api:libjingle_peerconnection_api",
++      "../api/audio_codecs:builtin_audio_decoder_factory",
++      "../api/audio_codecs:builtin_audio_encoder_factory",
++      "../api/video:video_frame",
++      "../api/video_codecs:builtin_video_decoder_factory",
++      "../api/video_codecs:builtin_video_encoder_factory",
++      "../media:rtc_audio_video",
++      "../modules/audio_device",
++      "../modules/audio_processing",
++      "../modules/audio_processing:api",
++     # "../modules/video_capture:video_capture_module",
++      "../pc:libjingle_peerconnection",
++      "../pc:peerconnection",
++      "../rtc_base",
++      "../rtc_base:rtc_base_approved",
++      "../rtc_base:rtc_json",
++    #  "../test:video_test_common",
++      "//third_party/libyuv",
++    ]
++
++    deps += [
++      "../rtc_base:rtc_json"
++    ]
++  }
++  ### RTC_GW END
++
+   rtc_executable("peerconnection_server") {
+     testonly = true
+     sources = [
+diff --git a/webrtc.gni b/webrtc.gni
+index 6ba8d0aeb3..68d2932d51 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -106,7 +106,7 @@ declare_args() {
+   rtc_build_tools = true
+ 
+   # Set this to false to skip building code that requires X11.
+-  rtc_use_x11 = use_x11
++  rtc_use_x11 = false
+ 
+   # Set this to use PipeWire on the Wayland display server.
+   # By default it's only enabled on desktop Linux (excludes ChromeOS) and
+@@ -252,7 +252,7 @@ rtc_opus_dir = "//third_party/opus"
+ # Desktop capturer is supported only on Windows, OSX and Linux.
+ rtc_desktop_capture_supported = (is_win && current_os != "winuwp") || is_mac ||
+                                 (is_linux && (rtc_use_x11 || rtc_use_pipewire))
+-
++rtc_desktop_capture_supported = false
+ ###############################################################################
+ # Templates
+ #

@@ -1,6 +1,22 @@
 
-# Installation :
+# Docker :
 
+## build image
+```
+docker/build.sh  
+```
+
+## run image
+```
+docker exec -it rtc_gw bash
+```
+```
+cd /git/webrtc-checkout/src
+./out/Default/rtc_gw --listen 127.0.0.1
+```
+
+
+# Installation :
 
 ## Debian
 ```
