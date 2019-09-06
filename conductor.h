@@ -19,8 +19,8 @@
 #include <string>
 
 #include "examples/rtc_gw/audio_device_module.h"
-#include "api/mediastreaminterface.h"
-#include "api/peerconnectioninterface.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
 #include "examples/rtc_gw/peer_connection_listener.h"
 
 class Conductor
@@ -67,7 +67,7 @@ class Conductor
 
   // PeerConnectionObserver implementation.
   void OnSignalingChange(
-      webrtc::PeerConnectionInterface::SignalingState new_state) override{};
+      webrtc::PeerConnectionInterface::SignalingState new_state) override{}
   void OnAddStream(
       rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
   void OnRemoveStream(
@@ -76,7 +76,7 @@ class Conductor
       rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
   void OnRenegotiationNeeded() override {}
   void OnIceConnectionChange(
-      webrtc::PeerConnectionInterface::IceConnectionState new_state) override{};
+      webrtc::PeerConnectionInterface::IceConnectionState new_state) override{}
   void OnIceGatheringChange(
       webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;

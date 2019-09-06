@@ -18,8 +18,8 @@
 #include <string>
 
 #include "modules/audio_device/audio_device_generic.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/system/file_wrapper.h"
 
 namespace rtc {
@@ -152,8 +152,8 @@ class FileAudioDevice : public webrtc::AudioDeviceModule {
   virtual rtc::RefCountReleaseStatus Release() const { return rtc::RefCountReleaseStatus::kDroppedLastRef; }
 
  private:
-  static bool RecThreadFunc(void*);
-  static bool PlayThreadFunc(void*);
+  static void RecThreadFunc(void*);
+  static void PlayThreadFunc(void*);
   bool RecThreadProcess();
   bool PlayThreadProcess();
 
@@ -179,8 +179,8 @@ class FileAudioDevice : public webrtc::AudioDeviceModule {
   int64_t _lastCallPlayoutMillis;
   int64_t _lastCallRecordMillis;
 
-  webrtc::FileWrapper& _outputFile;
-  webrtc::FileWrapper& _inputFile;
+  webrtc::FileWrapper _outputFile;
+  webrtc::FileWrapper _inputFile;
   std::string _outputFilename;
   std::string _inputFilename;
 };

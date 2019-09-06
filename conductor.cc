@@ -13,13 +13,18 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "api/create_peerconnection_factory.h"
 
-#include "api/test/fakeconstraints.h"
+// #include "api/test/fakeconstraints.h"
 #include "examples/rtc_gw/defaults.h"
-#include "media/engine/webrtcvideocapturerfactory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+
+// #include "media/engine/webrtcvideocapturerfactory.h"
+#include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/json.h"
+#include "rtc_base/strings/json.h"
 #include "rtc_base/logging.h"
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
@@ -77,19 +82,33 @@ bool Conductor::InitializePeerConnection() {
   RTC_DCHECK(peer_connection_factory_.get() == NULL);
   RTC_DCHECK(peer_connection_.get() == NULL);
   // CustomAudioModule
-  signaling_thread_ = new rtc::Thread();
+  // signaling_thread_ = new rtc::Thread();
+  // control_socket_ from peer connection ?
   rtcgw::FileAudioDevice *audio_device_ = new rtcgw::FileAudioDevice("/audio/input_48K_16bits_pcm.raw", "/audio/recording.raw");
   signaling_thread_->Start();
 
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
-     signaling_thread_,
-     rtc::Thread::Current(),
-     rtc::Thread::Current(),
-     audio_device_,
-     webrtc::CreateBuiltinAudioEncoderFactory(),
-     webrtc::CreateBuiltinAudioDecoderFactory(),
-     nullptr,
-     nullptr
+  //   // signaling_thread_,
+  //   nullptr,
+  //   rtc::Thread::Current(),
+  //   rtc::Thread::Current(),
+  //   audio_device_,
+  //   webrtc::CreateBuiltinAudioEncoderFactory(),
+  //   webrtc::CreateBuiltinAudioDecoderFactory(),
+  //   nullptr,
+  //   nullptr,
+  //   nullptr,
+  //   nullptr
+	nullptr /* network_thread */,
+	rtc::Thread::Current() /* worker_thread */,
+	rtc::Thread::Current() /* signaling_thread */,
+	audio_device_ /* default_adm */,
+	webrtc::CreateBuiltinAudioEncoderFactory(),
+	webrtc::CreateBuiltinAudioDecoderFactory(),
+	webrtc::CreateBuiltinVideoEncoderFactory(),
+	webrtc::CreateBuiltinVideoDecoderFactory(),
+	nullptr /* audio_mixer */,
+	nullptr /* audio_processing */
   );
 
   if (!peer_connection_factory_.get()) {
@@ -119,21 +138,21 @@ bool Conductor::CreatePeerConnection(bool dtls) {
   server.uri = GetPeerConnectionString();
   config.servers.push_back(server);
 
-  webrtc::FakeConstraints constraints;
+  // webrtc::FakeConstraints constraints;
   if (dtls) {
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                            "true");
-    RTC_LOG(INFO) << __FUNCTION__ << " DTLS constraint: true ";
+    config.enable_dtls_srtp = true;
+    // constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "true");
+    RTC_LOG(INFO) << __FUNCTION__ << " DTLS SRTP: true ";
   } else {
-    constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                            "false");
+    config.enable_dtls_srtp = false;
+    // constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "false");
     RTC_LOG(INFO) << __FUNCTION__ << " DTLS constraint: false ";
   }
-  constraints.AddOptional(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo,
-                            "false");
-  RTC_LOG(INFO) << __FUNCTION__ << " offer receive video: false ";
+  // constraints.AddOptional(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo, "false");
+  //RTC_LOG(INFO) << __FUNCTION__ << " offer receive video: false ";
+  // TODO offer_to_receive_video now in     RTCOfferAnswerOptions(int offer_to_receive_video,
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-      config, &constraints, NULL, NULL, this);
+      config, NULL, NULL, this);
   return peer_connection_.get() != NULL;
 }
 
@@ -170,7 +189,7 @@ void Conductor::OnIceGatheringChange(
     webrtc::PeerConnectionInterface::IceGatheringState new_state) {
 
     RTC_LOG(INFO) << __FUNCTION__ << " ? " << webrtc::PeerConnectionInterface::kIceGatheringComplete << " == " << new_state;
-};
+}
 
 void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     RTC_LOG(WARNING) << __FUNCTION__ << " " << candidate->sdp_mline_index();
@@ -280,7 +299,13 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
     RTC_LOG(INFO) << " remote description set !";
     if (session_description->type() ==
         webrtc::SessionDescriptionInterface::kOffer) {
-      peer_connection_->CreateAnswer(this, NULL);
+        int offer_to_receive_video = 0;
+	int offer_to_receive_audio = 1;
+	bool voice_activity_detection = true;
+	bool ice_restart = false;
+	bool use_rtp_mux = true;
+      peer_connection_->CreateAnswer(this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions(
+			      offer_to_receive_video, offer_to_receive_audio, voice_activity_detection, ice_restart, use_rtp_mux));
       RTC_LOG(INFO) << " Answer created !";
     }
     return;
@@ -342,7 +367,7 @@ void Conductor::ConnectToPeer(int peer_id) {
 
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
-    peer_connection_->CreateOffer(this, NULL);
+    peer_connection_->CreateOffer(this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
   } else {
     RTC_LOG(INFO) << "Error Failed to initialize PeerConnection";
   }
@@ -354,7 +379,7 @@ void Conductor::AddStreams() {
 
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
       peer_connection_factory_->CreateAudioTrack(
-          kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
+          kAudioLabel, peer_connection_factory_->CreateAudioSource(cricket::AudioOptions())));
 
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream("stream_id_todo_multi_stream");
